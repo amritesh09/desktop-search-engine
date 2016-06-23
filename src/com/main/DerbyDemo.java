@@ -13,7 +13,7 @@ import java.util.Properties;
 
 public class DerbyDemo {
  
-    public static void main(String[] args) {
+    public void deleteDb() {
          
         try {
             // connect method #1 - embedded driver

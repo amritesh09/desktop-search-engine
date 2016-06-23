@@ -62,7 +62,9 @@ public class ShowFile {
 			}
 			
 			for(int iter=0; iter<directoryContents.length; iter++) {
-				String subDirPath = directoryPath + "\\" + directoryContents[iter];
+				//System.out.println(directoryPath);
+				String subDirPath = directoryPath + "/" + directoryContents[iter];
+				
 				File subDirFile = new File(subDirPath);
 				if(subDirFile.isDirectory()) {
 					add(subDirPath,lblStatus);
@@ -119,42 +121,68 @@ public class ShowFile {
 		
 	}
 	
-	public void search(String key){
+	public void search(String key, String ext, boolean folderFlag){
 		String t=key;//tf1.getText();
 		String b="";//String t2=tf4.getText();
-	    String e="";//tf2.getText();
+	    String e=ext;//tf2.getText();
 	    String s[]=new String[2000];
-	    String s1[]=new String[2000];String s3[]=new String[2000];
+	    String s1[]=new String[2000];
+	    String s3[]=new String[2000];
 	    int i=0;int f=0;
 	  
 	  {  try{
-	       ResultSet result=dbStmt.executeQuery("select * from files_info");
+		  // Shivam's attempt
+		  ResultSet result;
+		  
+		  if(ext.length() != 0){
+			  if(folderFlag){
+				  result = dbStmt.executeQuery("select filePath from files_info WHERE fileExtension = '" + ext + "' AND filePath LIKE '%" + key + "%' "); 
+			  }
+			  else{
+				  result = dbStmt.executeQuery("select filePath from files_info WHERE fileExtension = '" + ext + "' AND fileName LIKE '%" + key + "%' "); 
+			  }
+		  }
+		  else{
+			  if(folderFlag){
+				  result = dbStmt.executeQuery("select filePath from files_info WHERE filePath LIKE '%" + key + "%' "); 
+			  }
+			  else{
+				  result = dbStmt.executeQuery("select filePath from files_info WHERE fileName LIKE '%" + key + "%' "); 
+			  }
+		  }
+		 
 	        while(result.next()&&f<20){
-//	        	s1[i]=result.getString(3);
-//	        	if(e.equals(s1[i])) {
-	        		if(false) {
-	                s[i]=result.getString(2);
-	                
-	                for(int k=0;k<s[i].length();k++) {
-	                    if(s[i].regionMatches(true,k,t,0,t.length())) {
-	                        System.out.println("found="+s[i]);f+=1;b=b+"!"+s[i];}}
-	            } else if(e.equals("")) {
-	                s[i]=result.getString(2);
-	                for(int k=0;k<s[i].length();k++) {
-	                    if(s[i].regionMatches(true,k,t,0,t.length())) {
-	                       if(f<20)
-	                             System.out.println("result found= "+s[i]);f+=1;b=b+"!"+s[i];
+
+//	        		if(false) {
+	                s[i]=result.getString(1);
+//	                
+//	                for(int k=0;k<s[i].length();k++) {
+//	                    if(s[i].regionMatches(true,k,t,0,t.length())) {
+//	                        System.out.println("found="+s[i]);f+=1;b=b+"!"+s[i];}}
+//	            } else if(e.equals(""))
+//	        	{
+//	                s[i]=result.getString(2);
+//	                for(int k=0;k<s[i].length();k++) {
+//	                    if(s[i].regionMatches(true,k,t,0,t.length())) {
+//	                       if(f<20)
+	                             System.out.println("result found= "+s[i]);
+	                             f+=1;
+	                             b=b+"!"+s[i];
 	                            /* if(f==1)
 	                                (new gui(f,s[i])).create();
 	                             else
 	                                 new gui(f,s[i]);*/
 	                    
-	                         }}}//i++;
+	                         //i++;
 	        }
 	        System.out.println(b);
 	        new gui(b);
 	        if(f==0)
-	            System.out.println("file not found");} catch(Exception e1){}
+	            System.out.println("file not found");} 
+	  catch(Exception e1){
+		  e1.printStackTrace();
+		  //System.out.println("More than 200 files ignoring");
+	  }
 	   }
 	}
 		public static void addRemaining() throws SQLException{
