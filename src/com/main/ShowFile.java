@@ -7,9 +7,16 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.StringTokenizer;
 
+import javax.swing.Icon;
 import javax.swing.JLabel;
+import javax.swing.JTable;
+import javax.swing.filechooser.FileSystemView;
+import javax.swing.table.DefaultTableModel;
+import javax.swing.table.TableColumn;
 
 
 public class ShowFile {
@@ -40,6 +47,7 @@ public class ShowFile {
 			System.out.println("create statement exception");
 		}
 	}
+	
 	
 	public void add(String directoryPath, JLabel lblStatus) {
 		//int count = 0;
@@ -121,13 +129,18 @@ public class ShowFile {
 		
 	}
 	
-	public void search(String key, String ext, boolean folderFlag){
+	public void search(String key, String ext, boolean folderFlag, DefaultTableModel dtm){
 		String t=key;//tf1.getText();
 		String b="";//String t2=tf4.getText();
 	    String e=ext;//tf2.getText();
 	    String s[]=new String[2000];
 	    String s1[]=new String[2000];
 	    String s3[]=new String[2000];
+	    File myFile;
+	    String fileName, filePath;
+	    Icon icon = null;
+	    long lastMod;
+	    dtm.setRowCount(0);
 	    int i=0;int f=0;
 	  
 	  {  try{
@@ -168,6 +181,16 @@ public class ShowFile {
 	                             System.out.println("result found= "+s[i]);
 	                             f+=1;
 	                             b=b+"!"+s[i];
+	                             myFile = new File(s[i]);
+	                             fileName = myFile.getName();
+	                             FileSystemView view = FileSystemView.getFileSystemView();
+	                             icon = view.getSystemIcon(myFile);
+	                             filePath = myFile.getAbsolutePath();
+	                             lastMod = myFile.lastModified();
+	                             Date date=new Date(lastMod);
+	                             SimpleDateFormat df2 = new SimpleDateFormat("dd/MM/yy");
+	                             String dateText = df2.format(date);
+	                             dtm.addRow(new Object[] { icon, "<html><b>"+fileName+"</b></html>", filePath, dateText});
 	                            /* if(f==1)
 	                                (new gui(f,s[i])).create();
 	                             else
@@ -176,7 +199,10 @@ public class ShowFile {
 	                         //i++;
 	        }
 	        System.out.println(b);
-	        new gui(b);
+	        
+	        
+	        
+	        //new gui(b);
 	        if(f==0)
 	            System.out.println("file not found");} 
 	  catch(Exception e1){
@@ -185,7 +211,9 @@ public class ShowFile {
 	  }
 	   }
 	}
-		public static void addRemaining() throws SQLException{
+	
+	
+	public static void addRemaining() throws SQLException{
 			ps.executeBatch();
 			ps.clearBatch();
 			System.out.println("remaining records added");

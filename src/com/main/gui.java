@@ -40,19 +40,52 @@ public class gui implements ActionListener{
            // if(s[i]!=null)
             {
         //String jb=" ";
+    	File[] files = new File[30];
+        DefaultListModel<File> model = new DefaultListModel<>();    	
+
         StringTokenizer st=new StringTokenizer(s,"!");
-                while(st.hasMoreTokens())
-                {s1[i]=st.nextToken();
-        jb[i]=new JButton(s1[i]);
-       // File f1=new File(s);
-        //f1.getAbsolutePath();
-        jb[i].setBounds(0,40*i,800,40);
-        System.out.println("f= "+i);
-        jb[i].addActionListener(this);
-      jf.setSize(800,800);
-      jf.add(jb[i]);i++;
-      
-         }}
+        while(st.hasMoreTokens())
+        {		
+        	s1[i]=st.nextToken();
+        	files[i] = new File(s1[i]);
+        	model.addElement(files[i]);
+        	jb[i]=new JButton(s1[i]);
+        	// File f1=new File(s);
+        	//f1.getAbsolutePath();
+        	jb[i].setBounds(0,40*i,800,40);
+	        System.out.println("f= "+i);
+	        jb[i].addActionListener(this);
+	        jf.setSize(800,800);
+	        jf.add(jb[i]);i++;
+	     }
+        JList<File> list = new JList<>(model);
+        list.setCellRenderer(new FileListCellRenderer());
+        list.addMouseListener(new MouseAdapter() {
+
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                if (SwingUtilities.isLeftMouseButton(e) && e.getClickCount() == 2) {
+                    JList list = (JList) e.getComponent();
+                    File file = (File) list.getSelectedValue();
+                    try {
+                        Desktop desktop = Desktop.getDesktop();
+                        desktop.open(file);
+                    } catch (IOException exp) {
+                        exp.printStackTrace();
+                    }
+                }
+            }
+
+        });
+        
+        JFrame frame = new JFrame("Testing");
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.add(new JScrollPane(list));
+        frame.pack();
+        frame.setLocationRelativeTo(null);
+        frame.setVisible(true);
+        
+        }
     }}
     @SuppressWarnings("static-access")
    public void actionPerformed(ActionEvent e){
