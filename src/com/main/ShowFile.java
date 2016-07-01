@@ -8,7 +8,10 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.text.SimpleDateFormat;
+import java.util.Arrays;
 import java.util.Date;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.StringTokenizer;
 
 import javax.swing.Icon;
@@ -22,9 +25,13 @@ import javax.swing.table.TableColumn;
 public class ShowFile {
 	
 	int serialNumber = 0;
+	public static final String[] commonFormats = new String[] { "txt","pdf", "doc", "docx", "ppt", "pptx", "xsl", "xslx", "zip", "gz", "avi", "flv", "wmv", "mp4", "mp3", "mov", "mpeg", "mkv", "amv", "wav", "wma" };
+	public static final Set<String> commonFormatsSet = new HashSet<String>(Arrays.asList(commonFormats));
+	int commonSerialNumber = 0;
 	static Connection dbConn;
 	Statement dbStmt;
 	static PreparedStatement ps = null;
+	static PreparedStatement cps = null;
 	static int remainingCount =0;
 	static String extensionName[] = new String[5000];
 	static String fileName[] = new String[5000];
@@ -35,16 +42,26 @@ public class ShowFile {
 			dbConn = DriverManager.getConnection(dbURL1);
 			dbStmt = dbConn.createStatement();
 			dbStmt.executeUpdate("create table files_info(serialNumber int, filePath varchar(500), fileName varchar(200), fileExtension varchar(60))");
+			dbStmt.executeUpdate("create table common_files_info(serialNumber int, filePath varchar(500), fileName varchar(200), fileExtension varchar(60))");
 			
 		}  catch (SQLException e) {
 			// TODO Auto-generated catch block
 //			e.printStackTrace();
-			System.out.println("SQL- create table exception");
+			System.out.println("SQL- create table error or table already exists");
+		}
+		try {
+			dbStmt.executeUpdate("create table common_files_info(serialNumber int, filePath varchar(500), fileName varchar(200), fileExtension varchar(60))");
+			
+		}  catch (SQLException e) {
+			// TODO Auto-generated catch block
+//			e.printStackTrace();
+			System.out.println("SQL- create table error or common table already exists");
 		}
 		try{
 			ps = dbConn.prepareStatement("INSERT INTO files_info VALUES (?, ?, ?, ?)");
+			cps = dbConn.prepareStatement("INSERT INTO common_files_info VALUES (?, ?, ?, ?)");
 		} catch(Exception e){
-			System.out.println("create statement exception");
+			System.out.println("prepare statement exception");
 		}
 	}
 	
@@ -75,6 +92,7 @@ public class ShowFile {
 				
 				File subDirFile = new File(subDirPath);
 				if(subDirFile.isDirectory()) {
+					
 					add(subDirPath,lblStatus);
 				}
 				else {
@@ -96,19 +114,37 @@ public class ShowFile {
 					}
 					
 					try {
-						this.serialNumber++;
+						
 						//dbUpdateStmt.executeUpdate("insert into files_info values("+serialNumber+",'"+subDirPath+"','"+fileName[iter]+"','"+extensionName[iter]+"')");
-						ps.setInt(1, serialNumber);
-						ps.setString(2, subDirPath);
-						ps.setString(3, fileName[iter]);
-						ps.setString(4, extensionName[iter]);
-						if(this.serialNumber%10000==0){
-							ps.executeBatch();
-							ps.clearBatch();
-							System.out.println("10000 records added");
-							lblStatus.setText(serialNumber+" records added");
+						if(commonFormatsSet.contains(extensionName[iter])){
+							this.commonSerialNumber++;
+							cps.setInt(1, commonSerialNumber);
+							cps.setString(2, subDirPath);
+							cps.setString(3, fileName[iter]);
+							cps.setString(4, extensionName[iter]);
+							if(this.commonSerialNumber%10000==0){
+								cps.executeBatch();
+								cps.clearBatch();
+								System.out.println("10000 records added to common table");
+								lblStatus.setText(commonSerialNumber+" records added");
+							}
+							cps.addBatch(); 
 						}
-						ps.addBatch(); 
+						else{
+							this.serialNumber++;
+							ps.setInt(1, serialNumber);
+							ps.setString(2, subDirPath);
+							ps.setString(3, fileName[iter]);
+							ps.setString(4, extensionName[iter]);
+							if(this.serialNumber%10000==0){
+								ps.executeBatch();
+								ps.clearBatch();
+								System.out.println("10000 records added");
+								lblStatus.setText(serialNumber+" records added");
+							}
+							ps.addBatch(); 
+						}
+						
 						
 						
 					} catch (SQLException e) {
@@ -133,6 +169,7 @@ public class ShowFile {
 		String t=key;//tf1.getText();
 		String b="";//String t2=tf4.getText();
 	    String e=ext;//tf2.getText();
+	    String path, allQuery;
 	    String s[]=new String[2000];
 	    String s1[]=new String[2000];
 	    String s3[]=new String[2000];
@@ -146,68 +183,80 @@ public class ShowFile {
 	  {  try{
 		  // Shivam's attempt
 		  ResultSet result;
+		  ResultSet fastResult = null;
 		  
 		  if(ext.length() != 0){
+			  if(commonFormatsSet.contains(ext)){
+				  if(folderFlag){
+					  fastResult = dbStmt.executeQuery("select filePath from common_files_info WHERE lower(fileExtension) = lower('" + ext + "') AND lower(filePath) LIKE lower('%" + key + "%') "); 
+				  }
+				  else{
+					  fastResult = dbStmt.executeQuery("select filePath from common_files_info WHERE lower(fileExtension) = lower('" + ext + "') AND lower(fileName) LIKE lower('%" + key + "%') "); 
+				  }
+			  }
 			  if(folderFlag){
-				  result = dbStmt.executeQuery("select filePath from files_info WHERE fileExtension = '" + ext + "' AND filePath LIKE '%" + key + "%' "); 
+				  allQuery = "select filePath from files_info WHERE lower(fileExtension) = lower('" + ext + "') AND lower(filePath) LIKE lower('%" + key + "%') "; 
 			  }
 			  else{
-				  result = dbStmt.executeQuery("select filePath from files_info WHERE fileExtension = '" + ext + "' AND fileName LIKE '%" + key + "%' "); 
+				  allQuery = "select filePath from files_info WHERE lower(fileExtension) = lower('" + ext + "') AND lower(fileName) LIKE lower('%" + key + "%') "; 
 			  }
 		  }
 		  else{
 			  if(folderFlag){
-				  result = dbStmt.executeQuery("select filePath from files_info WHERE filePath LIKE '%" + key + "%' "); 
+				  fastResult = dbStmt.executeQuery("select filePath from common_files_info WHERE lower(filePath) LIKE lower('%" + key + "%') "); 
+				  allQuery = "select filePath from files_info WHERE lower(filePath) LIKE lower('%" + key + "%') "; 
 			  }
 			  else{
-				  result = dbStmt.executeQuery("select filePath from files_info WHERE fileName LIKE '%" + key + "%' "); 
+				  fastResult = dbStmt.executeQuery("select filePath from common_files_info WHERE lower(fileName) LIKE lower('%" + key + "%') "); 
+				  allQuery = "select filePath from files_info WHERE lower(fileName) LIKE lower('%" + key + "%') "; 
 			  }
 		  }
 		 
-	        while(result.next()&&f<20){
-
-//	        		if(false) {
-	                s[i]=result.getString(1);
-//	                
-//	                for(int k=0;k<s[i].length();k++) {
-//	                    if(s[i].regionMatches(true,k,t,0,t.length())) {
-//	                        System.out.println("found="+s[i]);f+=1;b=b+"!"+s[i];}}
-//	            } else if(e.equals(""))
-//	        	{
-//	                s[i]=result.getString(2);
-//	                for(int k=0;k<s[i].length();k++) {
-//	                    if(s[i].regionMatches(true,k,t,0,t.length())) {
-//	                       if(f<20)
-	                             System.out.println("result found= "+s[i]);
-	                             f+=1;
-	                             b=b+"!"+s[i];
-	                             myFile = new File(s[i]);
-	                             fileName = myFile.getName();
-	                             FileSystemView view = FileSystemView.getFileSystemView();
-	                             icon = view.getSystemIcon(myFile);
-	                             filePath = myFile.getAbsolutePath();
-	                             lastMod = myFile.lastModified();
-	                             Date date=new Date(lastMod);
-	                             SimpleDateFormat df2 = new SimpleDateFormat("dd/MM/yy");
-	                             String dateText = df2.format(date);
-	                             dtm.addRow(new Object[] { icon, "<html><b>"+fileName+"</b></html>", filePath, dateText});
-	                            /* if(f==1)
-	                                (new gui(f,s[i])).create();
-	                             else
-	                                 new gui(f,s[i]);*/
-	                    
-	                         //i++;
+		  while(fastResult.next()&&f<20){
+	        	
+	        	path=fastResult.getString(1); 
+	            //System.out.println("result found= "+s[i]);
+		        f+=1;
+		        //b=b+"!"+s[i];
+		        myFile = new File(path);
+		        fileName = myFile.getName();
+		        FileSystemView view = FileSystemView.getFileSystemView();
+		        icon = view.getSystemIcon(myFile);
+		        filePath = myFile.getAbsolutePath();
+		        lastMod = myFile.lastModified();
+		        Date date=new Date(lastMod);
+		        SimpleDateFormat df2 = new SimpleDateFormat("dd/MM/yy HH:mm:ss.SS");
+		        String dateText = df2.format(date);
+		        dtm.addRow(new Object[] { icon, "<html><b>"+fileName+"</b></html>", filePath, dateText});
+		                    
+	       }
+		  
+		  result = dbStmt.executeQuery(allQuery);
+		  
+		  while(result.next()&&f<20){
+	        	
+	        	s[i]=result.getString(1);
+	            System.out.println("result found= "+s[i]);
+		        f+=1;
+		        b=b+"!"+s[i];
+		        myFile = new File(s[i]);
+		        fileName = myFile.getName();
+		        FileSystemView view = FileSystemView.getFileSystemView();
+		        icon = view.getSystemIcon(myFile);
+		        filePath = myFile.getAbsolutePath();
+		        lastMod = myFile.lastModified();
+		        Date date=new Date(lastMod);
+		        SimpleDateFormat df2 = new SimpleDateFormat("dd/MM/yy");
+		        String dateText = df2.format(date);
+		        dtm.addRow(new Object[] { icon, "<html><b>"+fileName+"</b></html>", filePath, dateText});
+		                    
 	        }
-	        System.out.println(b);
 	        
-	        
-	        
-	        //new gui(b);
 	        if(f==0)
 	            System.out.println("file not found");} 
 	  catch(Exception e1){
 		  e1.printStackTrace();
-		  //System.out.println("More than 200 files ignoring");
+		  
 	  }
 	   }
 	}
@@ -217,6 +266,9 @@ public class ShowFile {
 			ps.executeBatch();
 			ps.clearBatch();
 			System.out.println("remaining records added");
+			cps.executeBatch();
+			cps.clearBatch();
+			System.out.println("remaining records added to common");
 //			lblStatus.setText(serialNumber+" records added");
 		}
 	
