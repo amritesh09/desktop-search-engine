@@ -1,8 +1,16 @@
 # desktop-search-engine
 
-A desktop search engine application based on java Swing and Lucene.
-Currently, we provide the functionality to search for files and folders by name or path.
-You can also add extension as a filter.
-The search is lightening fast. 
+This is a java implementation of a basic desktop search engine.
+We have used java Swing and Derby.
 
-We plan to add search by content also in near future.
+Just add directories you want to add to DB (like C:\, D:\ or subdirectories). 
+It will  take a minute.
+
+After than you can search for any file or folder just by entering a 
+substring from the name and optionally an extension.
+
+We have designed the search to be lightening fast.
+You can get the results instantly. 
+We also cache the recently searched results for faster retreival.
+
+We are also working on adding search by content using Lucene.
