@@ -17,6 +17,8 @@ import java.awt.event.KeyEvent;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableColumn;
 
+import com.sun.org.apache.regexp.internal.RESyntaxException;
+
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;  
 import java.io.File;
@@ -47,6 +49,18 @@ public class GUIDriver {
 	                (tablePreferredWidth * (percentages[i] / total)));
 	    }
 	}
+	
+	private static JMenuItem makeMenuItem(String label) {
+		 JMenuItem item = new JMenuItem(label);
+		 item.addActionListener(new ActionListener() {
+				public void actionPerformed(ActionEvent e) {
+					System.out.println("wasdasdasdasd");
+					
+				}
+			});
+		 return item;
+     }
+	
 	
 	public static void main(String[] args) throws ClassNotFoundException, SQLException {  
 	JFrame mainFrame=new JFrame();//creating instance of JFrame  
@@ -238,7 +252,12 @@ public class GUIDriver {
 	sp.setSize(638, 510);
 	mainFrame.getContentPane().add(sp);  
 
-
+	final JPopupMenu contextMenu = new JPopupMenu("Edit");
+    contextMenu.add(makeMenuItem("Open file location"));
+    resultTable.setComponentPopupMenu(contextMenu);
+    resultTable.setInheritsPopupMenu(true);
+    resultTable.setInheritsPopupMenu(true);
+    
 //	Connection conn = dbHelper.getConn();
 //	Statement st = conn.createStatement();
 //	st.executeQuery("select * from demo");
