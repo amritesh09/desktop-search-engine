@@ -4,6 +4,7 @@ package com.main;
 import javax.swing.*;
 
 import java.awt.Desktop;
+import java.awt.Point;
 import java.awt.event.ActionListener;
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -17,10 +18,10 @@ import java.awt.event.KeyEvent;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableColumn;
 
-import com.sun.org.apache.regexp.internal.RESyntaxException;
 
 import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;  
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
 import java.io.File;
 import java.io.IOException;
 public class GUIDriver {
@@ -28,6 +29,7 @@ public class GUIDriver {
 	private static JTextField textAuthor;
 	private static JTextField tfDir;
 	final static ShowFile sf = new ShowFile();
+	final static AddFileWorker afw = new AddFileWorker();
 	final static DerbyDemo dd = new DerbyDemo();
 	private static JTextField tfKey;
 	private static JTextField tfExt;
@@ -54,10 +56,56 @@ public class GUIDriver {
 		 JMenuItem item = new JMenuItem(label);
 		 item.addActionListener(new ActionListener() {
 				public void actionPerformed(ActionEvent e) {
-					System.out.println("wasdasdasdasd");
+					//System.out.println("wasdasdasdasd");
 					
 				}
 			});
+		 item.addMouseListener(new MouseListener() {
+			 
+			@Override
+			public void mouseReleased(MouseEvent e) {
+				// TODO Auto-generated method stub
+				
+			}
+			
+			@Override
+			public void mousePressed(MouseEvent e) {
+				// only 1 menuItem clicked
+				Point p = e.getPoint();
+				 Point p2 = SwingUtilities.convertPoint(item.getParent(), p,resultTable.getParent()) ;
+				// get the row index that contains that coordinate
+				int rowNumber = resultTable.rowAtPoint( p2 );
+				String dir = resultTable.getValueAt(rowNumber,2)+"";
+				dir = dir.substring(0,dir.lastIndexOf('/'));
+				File folder = new File(dir);
+				//System.out.println(resultTable.getValueAt(rowNumber,2));
+				Desktop desktop = Desktop.getDesktop();
+				try {
+					desktop.open(folder);
+				} catch (IOException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				}
+			}
+			
+			@Override
+			public void mouseExited(MouseEvent e) {
+				// TODO Auto-generated method stub
+				
+			}
+			
+			@Override
+			public void mouseEntered(MouseEvent e) {
+				// TODO Auto-generated method stub
+				
+			}
+			
+			@Override
+			public void mouseClicked(MouseEvent e) {
+				// TODO Auto-generated method stub
+				
+			}
+		});
 		 return item;
      }
 	
@@ -68,8 +116,8 @@ public class GUIDriver {
 	mainFrame.addWindowListener(new WindowAdapter() {
 		@Override
 		public void windowClosed(WindowEvent arg0) {
-			sf.close();
-			
+			//sf.close();
+			afw.close();
 		}
 	});
 	//initialize BookManager class
@@ -102,8 +150,12 @@ public class GUIDriver {
 		public void actionPerformed(ActionEvent e) {
 			String dir = tfDir.getText();
 			//dbHelper.add(dir);
-			sf.add(dir, lblStatus);
+			//sf.add(dir, lblStatus);
+			afw.directoryPath = dir;
+			afw.lblStatus = lblStatus;
+			afw.execute();
 			try {
+				AddFileWorker.addRemaining();
 				ShowFile.addRemaining();
 			} catch (SQLException e1) {
 				// TODO Auto-generated catch block
@@ -132,9 +184,14 @@ public class GUIDriver {
 			}
 		}
 	});
-	chkFolderFlag.setBounds(27, 136, 113, 25);
+	chkFolderFlag.setBounds(27, 136, 147, 26);
 	mainFrame.getContentPane().add(chkFolderFlag);
 	
+	JCheckBox chckbxIncludeFile = new JCheckBox("include file");
+    chckbxIncludeFile.setBounds(198, 137, 147, 26);
+    chckbxIncludeFile.setSelected(true);
+    mainFrame.getContentPane().add(chckbxIncludeFile);
+	    
 	tfKey = new JTextField();
 	tfKey.addKeyListener(new KeyAdapter() {
 		@Override
@@ -155,7 +212,8 @@ public class GUIDriver {
 			String key = tfKey.getText();
 			String ext = tfExt.getText();
 			boolean folderFlag = chkFolderFlag.isSelected();
-			sf.search(key,ext,folderFlag,dtm);
+			boolean fileFlag = chckbxIncludeFile.isSelected();
+			sf.search(key,ext,folderFlag,fileFlag,dtm);
 		}
 	});
 	btnSearch.setBounds(324, 107, 218, 25);
@@ -194,6 +252,12 @@ public class GUIDriver {
 	       //all cells false
 	       return false;
 	    }
+		@Override
+        public Class getColumnClass(int column)
+        {
+            if (column == 0) return Icon.class; 
+            return Object.class;
+        }
 	};
 	String header[] = new String[] { "Icon", "Name", "Path", "Last Modified" };
 	dtm.setColumnIdentifiers(header);
@@ -223,8 +287,7 @@ public class GUIDriver {
 	resultTable.addMouseListener(new MouseAdapter() {
 		@Override
 		public void mouseClicked(MouseEvent e) {
-			if(e.getClickCount() == 2 && !e.isConsumed()){
-
+			if(e.getClickCount() == 2 && !e.isConsumed() && SwingUtilities.isLeftMouseButton( e )){
 				int row = resultTable.getSelectedRow();
 				String path = (dtm.getValueAt(row, 2)).toString();
 				Desktop desktop = Desktop.getDesktop();
@@ -257,6 +320,8 @@ public class GUIDriver {
     resultTable.setComponentPopupMenu(contextMenu);
     resultTable.setInheritsPopupMenu(true);
     resultTable.setInheritsPopupMenu(true);
+    
+   
     
 //	Connection conn = dbHelper.getConn();
 //	Statement st = conn.createStatement();

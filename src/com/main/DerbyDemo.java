@@ -32,6 +32,8 @@ public class DerbyDemo {
 //           }
            System.out.println("select successful");
            st.executeUpdate("delete from files_info");
+           st.executeUpdate("delete from common_files_info");
+           st.executeUpdate("delete from folders_info");
            System.out.println("delete successful");
         } catch (SQLException ex) {
             ex.printStackTrace();
