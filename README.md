@@ -4,7 +4,7 @@ This is a java implementation of a basic desktop search engine.
 We have used java Swing and Derby.
 
 Just add directories you want to add to DB (like C:\, D:\ or subdirectories). 
-It will  take a minute.
+It will run in the background and may take a few minutes. Meanwhile you can start using the app.
 
 After than you can search for any file or folder just by entering a 
 substring from the name and optionally an extension.
